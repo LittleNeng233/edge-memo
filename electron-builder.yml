@@ -1,0 +1,22 @@
+appId: com.codexw.edgenotes
+productName: EdgeNotes
+directories:
+  buildResources: resources
+  output: dist
+files:
+  - out/**
+extraResources:
+  - from: resources
+    to: resources
+asarUnpack:
+  - resources/**
+win:
+  target:
+    - nsis
+  icon: resources/icon.ico
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  artifactName: EdgeNotes-Setup-${version}.${ext}
+  shortcutName: EdgeNotes

@@ -1,0 +1,7 @@
+node_modules/
+out/
+dist/
+*.log
+.DS_Store
+测试结果.md
+*.local
