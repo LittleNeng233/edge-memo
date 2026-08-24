@@ -8,6 +8,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   sleepBlockEnabled: false,
   dockDisplayId: null,
   expandWidth: 420,
+  expandHeightRatio: 0.72,
   verticalRatio: 0.15,
   peekHeightRatio: 0.6,
   peekOffsetRatio: null,
@@ -34,6 +35,8 @@ function asNullableNum(v: unknown, fallback: number | null): number | null {
 
 const THEME_MODES: ThemeMode[] = ['dark', 'light', 'system']
 
+const EXPAND_ABS_MAX = 7680
+
 function normalize(raw: unknown): AppSettings {
   const s = (raw ?? {}) as Record<string, unknown>
   const theme = THEME_MODES.includes(s.theme as ThemeMode) ? (s.theme as ThemeMode) : DEFAULT_SETTINGS.theme
@@ -43,7 +46,14 @@ function normalize(raw: unknown): AppSettings {
       typeof s.dockDisplayId === 'number' && Number.isFinite(s.dockDisplayId)
         ? s.dockDisplayId
         : null,
-    expandWidth: Math.min(720, Math.max(320, asNum(s.expandWidth, DEFAULT_SETTINGS.expandWidth))),
+    expandWidth: Math.min(
+      EXPAND_ABS_MAX,
+      Math.max(320, asNum(s.expandWidth, DEFAULT_SETTINGS.expandWidth))
+    ),
+    expandHeightRatio: Math.min(
+      1,
+      Math.max(0.4, asNum(s.expandHeightRatio, DEFAULT_SETTINGS.expandHeightRatio))
+    ),
     verticalRatio: Math.min(
       1,
       Math.max(0, asNum(s.verticalRatio, DEFAULT_SETTINGS.verticalRatio))

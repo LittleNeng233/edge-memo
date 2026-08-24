@@ -30,7 +30,7 @@ function buildIcon(): Electron.NativeImage {
 export function createTray(trayActions: TrayActions): Tray {
   actions = trayActions
   tray = new Tray(buildIcon())
-  tray.setToolTip('EdgeNotes — 贴边笔记')
+  tray.setToolTip('EdgeMemo — 贴边笔记')
   tray.on('click', () => actions?.onToggle())
   rebuildMenu()
   return tray
@@ -73,7 +73,7 @@ function rebuildMenu(): void {
       }
     },
     { type: 'separator' },
-    { label: '退出 EdgeNotes', click: () => actions?.onQuit() }
+    { label: '退出 EdgeMemo', click: () => actions?.onQuit() }
   ]
   tray.setContextMenu(Menu.buildFromTemplate(template))
 }

@@ -276,7 +276,7 @@ export function copyIntoShelf(srcPath: string, preferName?: string): { absPath: 
 }
 
 const WELCOME_BODY = [
-  '<h2>欢迎使用 EdgeNotes 👋</h2>',
+  '<h2>欢迎使用 EdgeMemo 👋</h2>',
   '<p>我常驻在屏幕<strong>右侧边缘</strong>，收起后是一条细边，点击即可展开。</p>',
   '<h3>快速上手</h3>',
   '<ul>',

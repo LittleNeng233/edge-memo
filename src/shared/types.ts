@@ -25,6 +25,7 @@ export interface AppSettings {
   sleepBlockEnabled: boolean
   dockDisplayId: number | null
   expandWidth: number
+  expandHeightRatio: number
   verticalRatio: number
   peekHeightRatio: number
   peekOffsetRatio: number | null

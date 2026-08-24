@@ -1,6 +1,12 @@
 import { create } from 'zustand'
 import type { AppSettings, PowerState } from '@shared/types'
 
+export function applyTheme(theme: AppSettings['theme']): void {
+  const prefersLight = window.matchMedia('(prefers-color-scheme: light)').matches
+  const resolved = theme === 'system' ? (prefersLight ? 'light' : 'dark') : theme
+  document.documentElement.dataset.theme = resolved
+}
+
 export interface Toast {
   id: number
   kind: 'info' | 'success' | 'error'
@@ -49,9 +55,3 @@ export const useUiStore = create<UiState>((set, get) => ({
   },
   dismissToast: (id) => set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) }))
 }))
-
-export function applyTheme(theme: AppSettings['theme']): void {
-  const prefersLight = window.matchMedia('(prefers-color-scheme: light)').matches
-  const resolved = theme === 'system' ? (prefersLight ? 'light' : 'dark') : theme
-  document.documentElement.dataset.theme = resolved
-}

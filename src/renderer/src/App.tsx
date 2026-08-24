@@ -17,8 +17,30 @@ function HeaderBar(): JSX.Element {
   return (
     <header className="titlebar">
       <span className="brand" aria-hidden="true">
-        <span className="brand-dot" />
-        EdgeNotes
+        <svg className="brand-mark" viewBox="0 0 24 24" fill="none">
+          <defs>
+            <linearGradient id="bj-grad" x1="2" y1="4" x2="21" y2="20" gradientUnits="userSpaceOnUse">
+              <stop offset="0" style={{ stopColor: 'var(--accent-strong)' }} />
+              <stop offset="1" style={{ stopColor: 'var(--accent-deep)' }} />
+            </linearGradient>
+          </defs>
+          <rect x="2.2" y="6.4" width="3.2" height="11.2" rx="1.6" fill="url(#bj-grad)" />
+          <path
+            d="M9.4 4.4h6.4l4.2 4.2v10.8c0 .9-.7 1.6-1.6 1.6h-9c-.9 0-1.6-.7-1.6-1.6V6c0-.9.7-1.6 1.6-1.6Z"
+            fill="url(#bj-grad)"
+            opacity="0.18"
+          />
+          <path
+            d="M9.4 4.4h6.4l4.2 4.2v10.8c0 .9-.7 1.6-1.6 1.6h-9c-.9 0-1.6-.7-1.6-1.6V6c0-.9.7-1.6 1.6-1.6Z"
+            stroke="url(#bj-grad)"
+            strokeWidth="1.4"
+            strokeLinejoin="round"
+          />
+          <path d="M15.8 4.4v3c0 .8.6 1.4 1.4 1.4h2.8" stroke="url(#bj-grad)" strokeWidth="1.2" />
+          <path d="M12 11.6h5" stroke="url(#bj-grad)" strokeWidth="1.3" strokeLinecap="round" />
+          <path d="M12 15.2h3.4" stroke="url(#bj-grad)" strokeWidth="1.3" strokeLinecap="round" />
+        </svg>
+        EdgeMemo
       </span>
       <div className="titlebar-actions">
         {power?.isBlocking && (
@@ -158,7 +180,10 @@ export default function App(): JSX.Element | null {
       <TabBar />
       <main className="workspace">
         {activeTab ? (
-          <RichEditor key={activeTab.meta.id} tabId={activeTab.meta.id} initialBody={activeTab.body} />
+          <>
+            <div key={`flash-${activeTab.meta.id}`} className="workspace-flash" aria-hidden="true" />
+            <RichEditor key={activeTab.meta.id} tabId={activeTab.meta.id} initialBody={activeTab.body} />
+          </>
         ) : (
           <div className="empty-hint workspace-empty">
             {loading ? '正在加载…' : (

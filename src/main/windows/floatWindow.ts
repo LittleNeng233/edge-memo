@@ -29,7 +29,7 @@ export function createFloatWindow(): BrowserWindow {
     fullscreenable: false,
     alwaysOnTop: true,
     backgroundColor: '#14161a',
-    title: 'EdgeNotes',
+    title: 'EdgeMemo',
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,

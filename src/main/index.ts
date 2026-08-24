@@ -57,7 +57,7 @@ function bootstrap(): void {
   process.on('uncaughtException', (err) => {
     log('error', `未捕获异常: ${err.stack || String(err)}`)
     try {
-      dialog.showErrorBox('EdgeNotes 遇到错误', `${err.message}\n\n详情见日志文件。`)
+      dialog.showErrorBox('EdgeMemo 遇到错误', `${err.message}\n\n详情见日志文件。`)
     } catch {
       /* 忽略 */
     }
@@ -107,7 +107,7 @@ function bootstrap(): void {
       rebuildTrayMenu()
     }
 
-    log('info', 'EdgeNotes 已启动')
+    log('info', 'EdgeMemo 已启动')
   })
 
   app.on('second-instance', () => {

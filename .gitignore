@@ -5,3 +5,28 @@ dist/
 .DS_Store
 测试结果.md
 *.local
+
+# env & secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.csr
+
+# database
+*.db
+*.sqlite
+*.sqlite3
+
+# backup & temp
+*.bak
+*.tmp
+backup/
+
+# IDE
+.vscode/
+.idea/

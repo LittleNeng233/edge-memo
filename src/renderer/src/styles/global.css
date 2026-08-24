@@ -10,16 +10,16 @@
   --text-dim: #9aa0aa;
   --editor-text: #d9d7d2;
   --gutter-text: #4c525d;
-  --accent: #e8a33d;
-  --accent-strong: #f2b558;
-  --accent-deep: #b4690e;
-  --accent-soft: rgba(232, 163, 61, 0.14);
-  --selection: rgba(242, 181, 88, 0.22);
+  --accent: #c6cad2;
+  --accent-strong: #e3e6eb;
+  --accent-deep: #6a6f78;
+  --accent-soft: rgba(198, 202, 210, 0.13);
+  --selection: rgba(205, 210, 219, 0.22);
   --active-line: rgba(255, 255, 255, 0.03);
   --danger: #e5695f;
   --success: #6fbf85;
   --code-bg: rgba(255, 255, 255, 0.06);
-  --code-text: #d3b285;
+  --code-text: #b4b9c2;
   --md-h: #f0eee9;
   --md-strong: #ffffff;
   --shadow: 0 10px 32px rgba(0, 0, 0, 0.45);
@@ -39,17 +39,17 @@
   --text-dim: #8a857b;
   --editor-text: #33302a;
   --gutter-text: #c2bcB0;
-  --accent: #b4690e;
-  --accent-strong: #d97f1f;
-  --accent-deep: #8f5309;
-  --accent-soft: rgba(180, 105, 14, 0.12);
-  --selection: rgba(217, 127, 31, 0.18);
+  --accent: #4b4f57;
+  --accent-strong: #2e3138;
+  --accent-deep: #14161a;
+  --accent-soft: rgba(46, 49, 56, 0.1);
+  --selection: rgba(46, 49, 56, 0.16);
   --active-line: rgba(0, 0, 0, 0.03);
   --code-bg: rgba(0, 0, 0, 0.055);
-  --code-text: #8a5a17;
+  --code-text: #3f434b;
   --md-h: #1d1b17;
   --md-strong: #000000;
-  --shadow: 0 10px 32px rgba(60, 45, 20, 0.16);
+  --shadow: 0 10px 32px rgba(30, 32, 38, 0.16);
 }
 
 /* ============ 基础 ============ */
@@ -145,12 +145,10 @@ button {
   letter-spacing: 0.04em;
 }
 
-.brand-dot {
-  width: 9px;
-  height: 9px;
-  border-radius: 3px;
-  background: linear-gradient(160deg, var(--accent-strong), var(--accent-deep));
-  box-shadow: 0 0 8px var(--accent-soft);
+.brand-mark {
+  width: 17px;
+  height: 17px;
+  flex-shrink: 0;
 }
 
 .titlebar-actions {
@@ -216,8 +214,12 @@ button {
   display: flex;
   align-items: flex-end;
   overflow-x: auto;
-  scrollbar-width: thin;
+  scrollbar-width: none;
   max-width: calc(100% - 40px);
+}
+
+.tabbar-scroll::-webkit-scrollbar {
+  display: none;
 }
 
 .tabbar-empty {
@@ -237,8 +239,12 @@ button {
   color: var(--text-dim);
   cursor: default;
   border-radius: var(--radius-s) var(--radius-s) 0 0;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
   white-space: nowrap;
+}
+
+.tab:active {
+  transform: translateY(1px) scale(0.97);
 }
 
 .tab:hover {
@@ -250,6 +256,43 @@ button {
   background: var(--panel);
   color: var(--text);
   box-shadow: inset 0 -2px 0 var(--accent);
+  animation: tab-pop 0.18s ease;
+}
+
+@keyframes tab-pop {
+  0% {
+    transform: translateY(2px) scale(0.96);
+  }
+  60% {
+    transform: translateY(0) scale(1.02);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+
+.tab.is-dragging {
+  opacity: 0.35;
+}
+
+.tab.drag-before::before,
+.tab.drag-after::after {
+  content: '';
+  position: absolute;
+  top: 5px;
+  bottom: 5px;
+  width: 2.5px;
+  border-radius: 2px;
+  background: var(--accent-strong);
+  box-shadow: 0 0 6px var(--accent-soft);
+}
+
+.tab.drag-before::before {
+  left: 0;
+}
+
+.tab.drag-after::after {
+  right: 0;
 }
 
 .tab-title {
@@ -329,6 +372,23 @@ button {
   display: flex;
   min-height: 0;
   user-select: text;
+  position: relative;
+}
+
+.workspace-flash {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  background: var(--bg);
+  opacity: 0;
+  pointer-events: none;
+  animation: flash-out 0.22s ease;
+}
+
+@keyframes flash-out {
+  from {
+    opacity: 1;
+  }
 }
 
 .workspace .editor-container {
@@ -345,10 +405,28 @@ button {
   align-items: center;
   gap: 2px;
   padding: 6px 10px;
-  border-bottom: 1px solid var(--border-soft);
-  background: var(--panel);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  background: #ffffff;
   flex-shrink: 0;
   user-select: none;
+}
+
+.rt-toolbar .rt-btn {
+  color: #55585e;
+}
+
+.rt-toolbar .rt-btn:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: #17181c;
+}
+
+.rt-toolbar .rt-btn.is-active {
+  background: rgba(0, 0, 0, 0.09);
+  color: #17181c;
+}
+
+.rt-toolbar .rt-sep {
+  background: rgba(0, 0, 0, 0.14);
 }
 
 .rt-btn {
@@ -379,11 +457,6 @@ button {
   background: var(--border);
   margin: 0 6px;
   flex-shrink: 0;
-}
-
-.rt-hint {
-  margin-left: auto;
-  font-size: 11px;
 }
 
 /* 富文本编辑区 */
@@ -547,13 +620,17 @@ button {
 
 .btn-primary {
   background: linear-gradient(150deg, var(--accent-strong), var(--accent-deep));
-  color: #17120a;
+  color: #17181c;
   font-weight: 700;
   border: none;
   padding: 8px 20px;
   border-radius: var(--radius-m);
   font-size: 13px;
   transition: filter 0.15s ease, transform 0.1s ease;
+}
+
+:root[data-theme='light'] .btn-primary {
+  color: #f5f6f8;
 }
 
 .btn-primary:hover {
@@ -960,7 +1037,8 @@ select {
   box-shadow: var(--shadow);
   cursor: pointer;
   animation: toast-in 0.2s ease;
-  max-width: 78%;
+  white-space: nowrap;
+  max-width: 96vw;
 }
 
 @keyframes toast-in {
@@ -986,13 +1064,13 @@ select {
   width: 100%;
   border: none;
   padding: 0;
-  background: linear-gradient(180deg, var(--accent-strong) 0%, var(--accent-deep) 55%, var(--accent-strong) 100%);
+  background: linear-gradient(180deg, #2e3138 0%, #14161a 55%, #2e3138 100%);
   cursor: pointer;
   transition: filter 0.15s ease;
 }
 
 .peek-bar:hover {
-  filter: brightness(1.18);
+  filter: brightness(1.15);
 }
 
 .peek-bar:active {
@@ -1002,11 +1080,7 @@ select {
 .peek-glow {
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse at 50% 50%, rgba(255, 235, 200, 0.85), transparent 70%);
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-
-.peek-bar:hover .peek-glow {
+  background: radial-gradient(ellipse at 50% 50%, rgba(255, 255, 255, 0.75), transparent 70%);
   opacity: 1;
+  transition: opacity 0.2s ease;
 }

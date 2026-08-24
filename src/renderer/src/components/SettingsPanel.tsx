@@ -65,6 +65,16 @@ export function SettingsPanel(): JSX.Element | null {
     { value: 'system', label: '跟随系统' }
   ]
 
+  const dockedDisplay =
+    displays.find((d) => d.id === settings.dockDisplayId) ??
+    displays.find((d) => d.isPrimary) ??
+    null
+  const workArea = dockedDisplay?.workArea ?? null
+  const expandMax = Math.max(320, Math.floor((workArea?.width ?? 1440) / 2))
+  const heightPx = workArea
+    ? Math.round(Math.min(workArea.height - 24, Math.max(420, workArea.height * settings.expandHeightRatio)))
+    : null
+
   return (
     <div className="modal-mask" onClick={() => setSettingsOpen(false)}>
       <section
@@ -154,20 +164,40 @@ export function SettingsPanel(): JSX.Element | null {
 
           <div className="setting-row column">
             <label htmlFor="width-range">
-              展开宽度 <b>{settings.expandWidth}px</b>
+              展开宽度 <b>{Math.min(settings.expandWidth, expandMax)}px</b>
             </label>
             <input
               id="width-range"
               type="range"
               min={320}
-              max={720}
+              max={expandMax}
               step={20}
-              value={settings.expandWidth}
+              value={Math.min(settings.expandWidth, expandMax)}
               onChange={(e) => applyLive({ expandWidth: Number(e.target.value) })}
               onPointerUp={() => flushLive({ expandWidth: settings.expandWidth })}
               onKeyUp={() => flushLive({ expandWidth: settings.expandWidth })}
             />
-            <p className="dim">展开后窗口的宽度，拖动即时生效。</p>
+            <p className="dim">
+              展开后窗口的宽度，最小 320px，最大为屏幕宽度的一半（当前上限 {expandMax}px），拖动即时生效。
+            </p>
+          </div>
+
+          <div className="setting-row column">
+            <label htmlFor="height-range">
+              展开高度 <b>{heightPx !== null ? `${heightPx}px` : `${Math.round(settings.expandHeightRatio * 100)}%`}</b>
+            </label>
+            <input
+              id="height-range"
+              type="range"
+              min={40}
+              max={100}
+              step={5}
+              value={Math.round(settings.expandHeightRatio * 100)}
+              onChange={(e) => applyLive({ expandHeightRatio: Number(e.target.value) / 100 })}
+              onPointerUp={() => flushLive({ expandHeightRatio: settings.expandHeightRatio })}
+              onKeyUp={() => flushLive({ expandHeightRatio: settings.expandHeightRatio })}
+            />
+            <p className="dim">展开后窗口的高度，最大为屏幕高度，拖动即时生效。</p>
           </div>
 
           <div className="setting-row">
@@ -217,7 +247,7 @@ export function SettingsPanel(): JSX.Element | null {
           </div>
         </div>
 
-        <footer className="settings-foot dim">EdgeNotes v0.1.0 · 数据保存在 %APPDATA%\EdgeNotes\data\</footer>
+        <footer className="settings-foot dim">EdgeMemo v0.1.0 · 数据保存在 %APPDATA%\EdgeNotes\data\</footer>
       </section>
     </div>
   )

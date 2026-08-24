@@ -6,7 +6,6 @@ import { updateSettings, getSettings } from '../services/settings'
 
 const PEEK_WIDTH = 8
 const EXPAND_MIN = 320
-const EXPAND_MAX = 720
 const ANIM_LOCK_MS = 260
 
 let win: BrowserWindow | null = null
@@ -78,14 +77,19 @@ interface Rect {
   height: number
 }
 
+function expandWidthLimit(wa: { width: number }): number {
+  return Math.max(EXPAND_MIN, Math.floor(wa.width / 2))
+}
+
 function expandedBounds(disp: Display): Rect {
   const wa = disp.workArea
   const settings = getSettings()
-  const width = Math.min(EXPAND_MAX, Math.max(EXPAND_MIN, settings.expandWidth))
-  const height = Math.round(Math.min(wa.height - 24, Math.max(420, wa.height * 0.72)))
+  const width = Math.min(expandWidthLimit(wa), Math.max(EXPAND_MIN, settings.expandWidth))
+  const height = Math.round(
+    Math.min(wa.height - 24, Math.max(420, wa.height * settings.expandHeightRatio))
+  )
   const freeSpace = Math.max(0, wa.height - height)
-  const ratio = Math.min(1, Math.max(0, settings.verticalRatio))
-  return { x: wa.x + wa.width - width, y: wa.y + Math.round(freeSpace * ratio), width, height }
+  return { x: wa.x + wa.width - width, y: wa.y + Math.round(freeSpace / 2), width, height }
 }
 
 function collapsedBounds(disp: Display): Rect {
@@ -190,11 +194,16 @@ function clampAndSyncFromBounds(): void {
   const target = collapsed ? collapsedBounds(nearest) : expandedBounds(nearest)
 
   if (!collapsed) {
-    const width = Math.min(EXPAND_MAX, Math.max(EXPAND_MIN, b.width))
+    const width = Math.min(expandWidthLimit(wa), Math.max(EXPAND_MIN, b.width))
     const height = Math.min(wa.height - 24, Math.max(420, b.height))
     const freeSpace = Math.max(0, wa.height - height)
     const ratio = freeSpace > 0 ? Math.min(1, Math.max(0, (b.y - wa.y) / freeSpace)) : 0.15
-    updateSettings({ expandWidth: width, verticalRatio: Number(ratio.toFixed(4)) })
+    const heightRatio = Math.min(1, Math.max(0.4, height / wa.height))
+    updateSettings({
+      expandWidth: width,
+      expandHeightRatio: Number(heightRatio.toFixed(4)),
+      verticalRatio: Number(ratio.toFixed(4))
+    })
   } else {
     const freeSpace = Math.max(0, wa.height - target.height)
     if (freeSpace > 0) {

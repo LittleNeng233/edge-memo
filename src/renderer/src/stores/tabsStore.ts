@@ -21,6 +21,7 @@ interface TabsState {
   closeTab(id: string): Promise<void>
   removeNoteForever(id: string): Promise<void>
   setActive(id: string): void
+  reorder(fromId: string, toId: string, place: 'before' | 'after'): void
   updateBody(id: string, body: string): void
   rename(id: string, title: string): Promise<void>
   setComposing(id: string, composing: boolean): void
@@ -76,8 +77,15 @@ async function saveTabNow(
     const prevText = plainTextOf(savedBody).trim()
     const nextText = plainTextOf(bodyAtStart).trim()
     if (prevText.length >= 200 && nextText.length < 10) {
-      void window.edgenotes.note.autoBackup(id, savedBody).catch(() => {})
-      toast('检测到内容被大幅清空，原内容已自动备份', 'info')
+      const ok = window.confirm('检测到笔记内容被大幅清空。\n\n是否备份清空前的原内容？\n（备份保存到数据目录 backup 文件夹）')
+      if (ok) {
+        try {
+          await window.edgenotes.note.autoBackup(id, savedBody)
+          toast('已备份清空前的原内容', 'success')
+        } catch {
+          toast('备份失败：内容已正常保存', 'error')
+        }
+      }
     }
   }
   set({ tabs: state.tabs.map((t) => (t.meta.id === id ? { ...t, saving: true } : t)) })
@@ -240,6 +248,19 @@ export const useTabsStore = create<TabsState>((set, get) => ({
   setActive: (id) => {
     set({ activeId: id })
     persistSession(get().tabs, id)
+  },
+
+  reorder: (fromId, toId, place) => {
+    const s = get()
+    const from = s.tabs.findIndex((t) => t.meta.id === fromId)
+    const to = s.tabs.findIndex((t) => t.meta.id === toId)
+    if (from < 0 || to < 0 || fromId === toId) return
+    const tabs = s.tabs.slice()
+    const [moved] = tabs.splice(from, 1)
+    const anchor = tabs.findIndex((t) => t.meta.id === toId)
+    tabs.splice(place === 'before' ? anchor : anchor + 1, 0, moved)
+    set({ tabs })
+    persistSession(tabs, s.activeId)
   },
 
   updateBody: (id, body) => {

@@ -326,7 +326,6 @@ export function RichEditor({ tabId, initialBody }: RichEditorProps): JSX.Element
         >
           🖼
         </button>
-        <span className="rt-hint dim">可直接 Ctrl+V 粘贴截图</span>
         <input
           ref={fileRef}
           type="file"

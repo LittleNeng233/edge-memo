@@ -35,7 +35,6 @@ function asString(v: unknown, name: string): string {
 }
 
 const THEMES: ThemeMode[] = ['dark', 'light', 'system']
-
 export function registerIpc(getWin: () => BrowserWindow | null): void {
   ipcMain.handle('note:list', () => listNotes())
 
@@ -127,6 +126,9 @@ export function registerIpc(getWin: () => BrowserWindow | null): void {
     if (typeof input.expandWidth === 'number' && Number.isFinite(input.expandWidth)) {
       next.expandWidth = input.expandWidth
     }
+    if (typeof input.expandHeightRatio === 'number' && Number.isFinite(input.expandHeightRatio)) {
+      next.expandHeightRatio = input.expandHeightRatio
+    }
     if (typeof input.verticalRatio === 'number' && Number.isFinite(input.verticalRatio)) {
       next.verticalRatio = input.verticalRatio
     }
@@ -158,6 +160,7 @@ export function registerIpc(getWin: () => BrowserWindow | null): void {
     }
     const touchesLayout =
       next.expandWidth !== undefined ||
+      next.expandHeightRatio !== undefined ||
       next.verticalRatio !== undefined ||
       next.peekHeightRatio !== undefined ||
       next.dockDisplayId !== undefined
