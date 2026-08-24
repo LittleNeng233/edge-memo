@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import type { AppSettings, DockState } from '@shared/types'
-import type { EdgenotesApi } from '@shared/api'
+import type { EdgememoApi } from '@shared/api'
 
 function subscribe<T>(channel: string, cb: (payload: T) => void): () => void {
   const listener = (_e: Electron.IpcRendererEvent, payload: T): void => cb(payload)
@@ -10,7 +10,7 @@ function subscribe<T>(channel: string, cb: (payload: T) => void): () => void {
   }
 }
 
-const api: EdgenotesApi = {
+const api: EdgememoApi = {
   note: {
     list: () => ipcRenderer.invoke('note:list'),
     open: (id) => ipcRenderer.invoke('note:open', id),
@@ -63,4 +63,4 @@ const api: EdgenotesApi = {
   onQuitRequest: (cb) => subscribe<void>('app:quit-request', () => cb())
 }
 
-contextBridge.exposeInMainWorld('edgenotes', api)
+contextBridge.exposeInMainWorld('edgememo', api)

@@ -29,8 +29,26 @@ interface TabsState {
   flushAll(): Promise<boolean>
 }
 
-const OPEN_KEY = 'edgenotes.openTabs'
-const ACTIVE_KEY = 'edgenotes.activeTab'
+const OPEN_KEY = 'edgememo.openTabs'
+const ACTIVE_KEY = 'edgememo.activeTab'
+const LEGACY_OPEN_KEY = 'edgenotes.openTabs'
+const LEGACY_ACTIVE_KEY = 'edgenotes.activeTab'
+
+function migrateLegacyKeys(): void {
+  try {
+    if (localStorage.getItem(OPEN_KEY) === null && localStorage.getItem(LEGACY_OPEN_KEY) !== null) {
+      localStorage.setItem(OPEN_KEY, localStorage.getItem(LEGACY_OPEN_KEY) as string)
+    }
+    if (localStorage.getItem(ACTIVE_KEY) === null && localStorage.getItem(LEGACY_ACTIVE_KEY) !== null) {
+      localStorage.setItem(ACTIVE_KEY, localStorage.getItem(LEGACY_ACTIVE_KEY) as string)
+    }
+    localStorage.removeItem(LEGACY_OPEN_KEY)
+    localStorage.removeItem(LEGACY_ACTIVE_KEY)
+  } catch {
+    /* 隐私模式等场景忽略 */
+  }
+}
+migrateLegacyKeys()
 
 const saveTimers = new Map<string, ReturnType<typeof setTimeout>>()
 const activeSaveSeq: Record<string, number> = {}
@@ -80,7 +98,7 @@ async function saveTabNow(
       const ok = window.confirm('检测到笔记内容被大幅清空。\n\n是否备份清空前的原内容？\n（备份保存到数据目录 backup 文件夹）')
       if (ok) {
         try {
-          await window.edgenotes.note.autoBackup(id, savedBody)
+          await window.edgememo.note.autoBackup(id, savedBody)
           toast('已备份清空前的原内容', 'success')
         } catch {
           toast('备份失败：内容已正常保存', 'error')
@@ -90,7 +108,7 @@ async function saveTabNow(
   }
   set({ tabs: state.tabs.map((t) => (t.meta.id === id ? { ...t, saving: true } : t)) })
   try {
-    const { updatedAt } = await window.edgenotes.note.save(id, bodyAtStart)
+    const { updatedAt } = await window.edgememo.note.save(id, bodyAtStart)
     const cur = getState()
     const latest = cur.tabs.find((t) => t.meta.id === id)
     if (!latest || activeSaveSeq[id] !== seq) return true
@@ -121,9 +139,9 @@ export const useTabsStore = create<TabsState>((set, get) => ({
 
   init: async () => {
     try {
-      let metas: NoteMeta[] = await window.edgenotes.note.list()
+      let metas: NoteMeta[] = await window.edgememo.note.list()
       if (metas.length === 0) {
-        const created = await window.edgenotes.note.create()
+        const created = await window.edgememo.note.create()
         metas = [created]
       }
       let openIds: string[] = []
@@ -139,7 +157,7 @@ export const useTabsStore = create<TabsState>((set, get) => ({
       const loadedResults = await Promise.all(
         finalIds.map(async (id): Promise<Tab | null> => {
           try {
-            const data: NoteData = await window.edgenotes.note.open(id)
+            const data: NoteData = await window.edgememo.note.open(id)
             return { meta: toMeta(data), body: data.body, dirty: false, saving: false, savedAt: null }
           } catch {
             return null
@@ -168,7 +186,7 @@ export const useTabsStore = create<TabsState>((set, get) => ({
       return
     }
     try {
-      const data = await window.edgenotes.note.open(id)
+      const data = await window.edgememo.note.open(id)
       const tab: Tab = { meta: toMeta(data), body: data.body, dirty: false, saving: false, savedAt: null }
       lastSavedBodies.set(id, data.body)
       set((s) => ({ tabs: [...s.tabs, tab], activeId: id }))
@@ -180,7 +198,7 @@ export const useTabsStore = create<TabsState>((set, get) => ({
 
   newNote: async (title) => {
     try {
-      const data = await window.edgenotes.note.create(title)
+      const data = await window.edgememo.note.create(title)
       const tab: Tab = { meta: toMeta(data), body: data.body, dirty: false, saving: false, savedAt: null }
       lastSavedBodies.set(tab.meta.id, data.body)
       set((s) => ({ tabs: [...s.tabs, tab], activeId: tab.meta.id }))
@@ -228,7 +246,7 @@ export const useTabsStore = create<TabsState>((set, get) => ({
       clearTimeout(saveTimers.get(id))
       saveTimers.delete(id)
       lastSavedBodies.delete(id)
-      await window.edgenotes.note.remove(id)
+      await window.edgememo.note.remove(id)
       set((s) => {
         const idx = s.tabs.findIndex((t) => t.meta.id === id)
         const tabs = s.tabs.filter((t) => t.meta.id !== id)
@@ -293,7 +311,7 @@ export const useTabsStore = create<TabsState>((set, get) => ({
       tabs: s.tabs.map((t) => (t.meta.id === id ? { ...t, meta: { ...t.meta, title: clean } } : t))
     }))
     try {
-      await window.edgenotes.note.rename(id, clean)
+      await window.edgememo.note.rename(id, clean)
     } catch (err) {
       toast(`重命名失败：${err instanceof Error ? err.message : String(err)}`, 'error')
     }

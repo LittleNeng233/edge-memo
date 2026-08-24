@@ -1,6 +1,6 @@
 {
-  "name": "edge-notes",
-  "productName": "EdgeNotes",
+  "name": "edgememo",
+  "productName": "EdgeMemo",
   "version": "0.1.0",
   "description": "Windows 贴边悬浮笔记应用",
   "main": "./out/main/index.js",

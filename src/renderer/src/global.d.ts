@@ -1,9 +1,9 @@
 /// <reference types="vite/client" />
-import type { EdgenotesApi } from '@shared/api'
+import type { EdgememoApi } from '@shared/api'
 
 declare global {
   interface Window {
-    edgenotes: EdgenotesApi
+    edgememo: EdgememoApi
   }
 }
 

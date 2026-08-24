@@ -52,7 +52,7 @@ function doQuit(): void {
 }
 
 function bootstrap(): void {
-  app.setAppUserModelId('com.codexw.edgenotes')
+  app.setAppUserModelId('com.codexw.edgememo')
 
   process.on('uncaughtException', (err) => {
     log('error', `未捕获异常: ${err.stack || String(err)}`)

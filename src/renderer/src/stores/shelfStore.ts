@@ -15,7 +15,7 @@ export const useShelfStore = create<ShelfState>((set, get) => ({
 
   refresh: async () => {
     try {
-      set({ items: await window.edgenotes.shelf.list() })
+      set({ items: await window.edgememo.shelf.list() })
     } catch (err) {
       useUiStore
         .getState()
@@ -26,7 +26,7 @@ export const useShelfStore = create<ShelfState>((set, get) => ({
   add: async (paths) => {
     if (!paths.length) return
     try {
-      const results = await window.edgenotes.shelf.add(paths)
+      const results = await window.edgememo.shelf.add(paths)
       await get().refresh()
       const failed = results.filter((r) => !r.ok)
       if (failed.length === 0) {
@@ -48,7 +48,7 @@ export const useShelfStore = create<ShelfState>((set, get) => ({
 
   pasteImage: async () => {
     try {
-      const result = await window.edgenotes.shelf.pasteImage()
+      const result = await window.edgememo.shelf.pasteImage()
       if (!result.ok) {
         useUiStore.getState().toast(`粘贴失败：${result.error ?? '未知错误'}`, 'error')
         return
@@ -64,7 +64,7 @@ export const useShelfStore = create<ShelfState>((set, get) => ({
 
   remove: async (id) => {
     try {
-      await window.edgenotes.shelf.remove(id)
+      await window.edgememo.shelf.remove(id)
       set((s) => ({ items: s.items.filter((it) => it.id !== id) }))
     } catch (err) {
       useUiStore

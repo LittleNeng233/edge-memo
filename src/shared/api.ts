@@ -10,7 +10,7 @@ import type {
   ShelfItem
 } from './types'
 
-export interface EdgenotesApi {
+export interface EdgememoApi {
   note: {
     list(): Promise<NoteMeta[]>
     open(id: string): Promise<NoteData>

@@ -55,7 +55,7 @@ export function Shelf(): JSX.Element | null {
   const [thumbErrors, setThumbErrors] = useState<Record<string, boolean>>({})
 
   useEffect(() => {
-    const unbind = window.edgenotes.shelf.onDragError((info) => {
+    const unbind = window.edgememo.shelf.onDragError((info) => {
       useUiStore.getState().toast(`「${info.name}」${info.reason}`, 'error')
     })
     return unbind
@@ -86,7 +86,7 @@ export function Shelf(): JSX.Element | null {
     const paths: string[] = []
     for (const f of files) {
       try {
-        const p = window.edgenotes.shelf.pathForFile(f)
+        const p = window.edgememo.shelf.pathForFile(f)
         if (p) paths.push(p)
       } catch {
         /* 无法取路径的项跳过 */
@@ -138,8 +138,8 @@ export function Shelf(): JSX.Element | null {
               title={`${it.name}\n${formatSize(it.size)}\n来自：${it.originPath}\n按住拖出为复制`}
               onDragStart={(e) => {
                 e.dataTransfer.effectAllowed = 'copy'
-                e.dataTransfer.setData('application/edgenotes-shelf', it.id)
-                window.edgenotes.shelf.dragOut(it.id)
+                e.dataTransfer.setData('application/edgememo-shelf', it.id)
+                window.edgememo.shelf.dragOut(it.id)
               }}
             >
               <span className="shelf-tile-icon" aria-hidden="true">

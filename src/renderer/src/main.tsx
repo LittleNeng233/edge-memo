@@ -7,12 +7,12 @@ import './styles/global.css'
 
 async function bootstrap(): Promise<void> {
   try {
-    const settings = await window.edgenotes.settings.get()
+    const settings = await window.edgememo.settings.get()
     useUiStore.getState().setSettings(settings)
     applyTheme(settings.theme)
-    const power = await window.edgenotes.power.getState()
+    const power = await window.edgememo.power.getState()
     useUiStore.getState().setPower(power)
-    const dock = await window.edgenotes.window.getState()
+    const dock = await window.edgememo.window.getState()
     useUiStore.getState().setDockCollapsed(dock.collapsed)
   } catch {
     /* 使用默认主题继续启动 */

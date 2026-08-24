@@ -1,5 +1,5 @@
-appId: com.codexw.edgenotes
-productName: EdgeNotes
+appId: com.codexw.edgememo
+productName: EdgeMemo
 directories:
   buildResources: resources
   output: dist
@@ -18,5 +18,5 @@ nsis:
   oneClick: false
   perMachine: false
   allowToChangeInstallationDirectory: true
-  artifactName: EdgeNotes-Setup-${version}.${ext}
-  shortcutName: EdgeNotes
+  artifactName: EdgeMemo-Setup-${version}.${ext}
+  shortcutName: EdgeMemo

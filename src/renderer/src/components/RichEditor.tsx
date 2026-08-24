@@ -142,7 +142,7 @@ export function RichEditor({ tabId, initialBody }: RichEditorProps): JSX.Element
       }
       try {
         const data = new Uint8Array(await file.arrayBuffer())
-        const url = await window.edgenotes.media.saveNoteImage(tabId, data, ext)
+        const url = await window.edgememo.media.saveNoteImage(tabId, data, ext)
         if (!ref.current) {
           toast('窗口在插入前已收起，本次插入已取消', 'error')
           return
@@ -176,7 +176,7 @@ export function RichEditor({ tabId, initialBody }: RichEditorProps): JSX.Element
       const src = im.getAttribute('src')
       if (!src) continue
       try {
-        const url = await window.edgenotes.media.importImage(src)
+        const url = await window.edgememo.media.importImage(src)
         im.setAttribute('src', url)
         im.removeAttribute('srcset')
       } catch {
@@ -188,13 +188,13 @@ export function RichEditor({ tabId, initialBody }: RichEditorProps): JSX.Element
 
   const insertClipboardImage = useCallback(async (): Promise<boolean> => {
     try {
-      const img = await window.edgenotes.clipboard.readImage()
+      const img = await window.edgememo.clipboard.readImage()
       if (!img) return false
       if (!ref.current) {
         toast('窗口已收起，无法粘贴图片，请重新操作', 'error')
         return true
       }
-      const url = await window.edgenotes.media.saveNoteImage(
+      const url = await window.edgememo.media.saveNoteImage(
         tabId,
         new Uint8Array(img.data),
         img.ext
@@ -269,7 +269,7 @@ export function RichEditor({ tabId, initialBody }: RichEditorProps): JSX.Element
     const href = anchor.getAttribute('href')
     if (!href) return
     e.preventDefault()
-    window.edgenotes.sys
+    window.edgememo.sys
       .openExternal(href)
       .catch((err) => toast(`打开链接失败：${err instanceof Error ? err.message : String(err)}`, 'error'))
   }

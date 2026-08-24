@@ -14,7 +14,7 @@ export function SettingsPanel(): JSX.Element | null {
 
   useEffect(() => {
     if (open) {
-      window.edgenotes.settings.listDisplays().then(setDisplays).catch(() => setDisplays([]))
+      window.edgememo.settings.listDisplays().then(setDisplays).catch(() => setDisplays([]))
     }
   }, [open])
 
@@ -22,10 +22,10 @@ export function SettingsPanel(): JSX.Element | null {
 
   const apply = async (patch: Parameters<typeof patchSettings>[0], message?: string): Promise<void> => {
     try {
-      const saved = await window.edgenotes.settings.set(patch)
+      const saved = await window.edgememo.settings.set(patch)
       useUiStore.getState().setSettings(saved)
       if (patch.sleepBlockEnabled !== undefined) {
-        void window.edgenotes.power
+        void window.edgememo.power
           .getState()
           .then(useUiStore.getState().setPower)
           .catch(() => {})
@@ -247,7 +247,7 @@ export function SettingsPanel(): JSX.Element | null {
           </div>
         </div>
 
-        <footer className="settings-foot dim">EdgeMemo v0.1.0 · 数据保存在 %APPDATA%\EdgeNotes\data\</footer>
+        <footer className="settings-foot dim">EdgeMemo v0.1.0 · 数据保存在 %APPDATA%\EdgeMemo\data\</footer>
       </section>
     </div>
   )

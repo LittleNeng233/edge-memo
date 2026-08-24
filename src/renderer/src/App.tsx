@@ -66,7 +66,7 @@ function HeaderBar(): JSX.Element {
         </button>
         <button
           className="icon-btn collapse-btn"
-          onClick={() => window.edgenotes.window.collapse()}
+          onClick={() => window.edgememo.window.collapse()}
           aria-label="收起为屏幕侧边"
           title="收起为侧边"
         >
@@ -122,22 +122,22 @@ export default function App(): JSX.Element | null {
     window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => {
       applyTheme(useUiStore.getState().settings?.theme ?? 'system')
     })
-    const unbindDock = window.edgenotes.onDockState((state) =>
+    const unbindDock = window.edgememo.onDockState((state) =>
       useUiStore.getState().setDockCollapsed(state.collapsed)
     )
-    const unbindQuit = window.edgenotes.onQuitRequest(() => {
+    const unbindQuit = window.edgememo.onQuitRequest(() => {
       void flushAll().then((ok) => {
         if (ok) {
-          window.edgenotes.app.confirmQuit()
+          window.edgememo.app.confirmQuit()
         } else {
           useUiStore.getState().toast('部分笔记保存失败，已取消退出，请重试', 'error')
         }
       })
     })
-    const unbindSettings = window.edgenotes.settings.onChange((s) => {
+    const unbindSettings = window.edgememo.settings.onChange((s) => {
       useUiStore.getState().setSettings(s)
       applyTheme(s.theme)
-      void window.edgenotes.power
+      void window.edgememo.power
         .getState()
         .then(useUiStore.getState().setPower)
         .catch(() => {})
