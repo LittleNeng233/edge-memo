@@ -248,7 +248,7 @@ export function SettingsPanel(): JSX.Element | null {
           </div>
         </div>
 
-        <footer className="settings-foot dim">EdgeMemo v0.2.0 · 数据保存在 %APPDATA%\EdgeMemo\data\</footer>
+        <footer className="settings-foot dim">EdgeMemo v0.2.1 · 数据保存在 %APPDATA%\EdgeMemo\data\</footer>
       </section>
     </div>
   )

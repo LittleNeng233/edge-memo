@@ -1,7 +1,7 @@
 {
   "name": "edgememo",
   "productName": "EdgeMemo",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Windows 贴边悬浮笔记应用",
   "main": "./out/main/index.js",
   "author": "Codex Workspace",
@@ -14,7 +14,7 @@
     "typecheck:web": "tsc --noEmit -p tsconfig.web.json",
     "typecheck": "npm run typecheck:node && npm run typecheck:web",
     "lint": "eslint .",
-    "icons": "node scripts/gen-icons.mjs",
+    "icons": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-icons.ps1",
     "dist": "electron-vite build && electron-builder --win --config electron-builder.yml"
   },
   "dependencies": {
