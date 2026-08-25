@@ -1,7 +1,7 @@
 {
   "name": "edgememo",
   "productName": "EdgeMemo",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Windows 贴边悬浮笔记应用",
   "main": "./out/main/index.js",
   "author": "Codex Workspace",

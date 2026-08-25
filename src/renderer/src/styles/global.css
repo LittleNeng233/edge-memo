@@ -146,9 +146,11 @@ button {
 }
 
 .brand-mark {
-  width: 17px;
-  height: 17px;
+  width: 18px;
+  height: 18px;
   flex-shrink: 0;
+  object-fit: contain;
+  border-radius: 5px;
 }
 
 .titlebar-actions {

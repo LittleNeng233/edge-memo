@@ -5,6 +5,7 @@ Add-Type -AssemblyName System.Drawing
 $root = Split-Path -Parent $PSScriptRoot
 $srcPath = Join-Path $root 'design\icon-1024.png'
 $resDir = Join-Path $root 'resources'
+$brandDir = Join-Path $root 'src\renderer\src\assets'
 if (-not (Test-Path $srcPath)) { Write-Error "design source missing: $srcPath"; exit 1 }
 
 $src = [System.Drawing.Bitmap]::FromFile($srcPath)
@@ -87,6 +88,9 @@ $f256.Dispose()
 $f32 = Get-IconFrame 32
 $f32.Save((Join-Path $resDir 'tray.png'), [System.Drawing.Imaging.ImageFormat]::Png)
 $f32.Save((Join-Path $resDir 'drag-icon.png'), [System.Drawing.Imaging.ImageFormat]::Png)
+# Title-bar brand icon (renderer asset, auto-synced)
+if (-not (Test-Path $brandDir)) { New-Item -ItemType Directory -Path $brandDir -Force | Out-Null }
+$f32.Save((Join-Path $brandDir 'brand.png'), [System.Drawing.Imaging.ImageFormat]::Png)
 $f32.Dispose()
 
 Remove-Item $tmp -Recurse -Force
