@@ -29,7 +29,8 @@ function sanitizeHtml(html: string): string {
         el.removeAttribute(attr.name)
       } else if (
         name === 'style' &&
-        /(expression\s*\(|javascript\s*:|behavior\s*:|@import|url\s*\()/i.test(attr.value)
+        // 合法 url() 交给 CSP img-src 管控，这里只拦危险构造
+        /(expression\s*\(|javascript\s*:|behavior\s*:|@import)/i.test(attr.value)
       ) {
         el.removeAttribute(attr.name)
       }

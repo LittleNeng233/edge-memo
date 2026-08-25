@@ -11,7 +11,7 @@ export function serializeNote(meta: NoteMeta, body: string): string {
   const lines = [
     '---',
     `id: ${meta.id}`,
-    `title: ${meta.title.replace(/\n/g, ' ')}`,
+    `title: ${meta.title.replace(/[\r\n]+/g, ' ')}`,
     `createdAt: ${meta.createdAt}`,
     `updatedAt: ${meta.updatedAt}`,
     `order: ${meta.order}`,

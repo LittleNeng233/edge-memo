@@ -12,7 +12,20 @@ let win: BrowserWindow | null = null
 let collapsed = false
 let busyUntil = 0
 let autoCollapseTimer: NodeJS.Timeout | null = null
+let autoCollapseSuppressed = false
 let initialized = false
+
+/**
+ * 模态对话框打开期间抑制失焦自动收起，
+ * 避免确认框还挂在屏幕上时窗口先被收起。
+ */
+export function setAutoCollapseSuppressed(flag: boolean): void {
+  autoCollapseSuppressed = flag
+  if (flag && autoCollapseTimer) {
+    clearTimeout(autoCollapseTimer)
+    autoCollapseTimer = null
+  }
+}
 
 export function initDockEngine(
   target: BrowserWindow,
@@ -42,6 +55,7 @@ export function initDockEngine(
 
   win.on('blur', () => {
     if (autoCollapseTimer) clearTimeout(autoCollapseTimer)
+    if (autoCollapseSuppressed) return
     const delay = Math.min(3000, Math.max(500, getSettings().autoCollapseDelay))
     autoCollapseTimer = setTimeout(() => {
       if (onAutoCollapseBlur() && !collapsed && win && !win.isDestroyed() && !win.isFocused()) {
@@ -196,13 +210,10 @@ function clampAndSyncFromBounds(): void {
   if (!collapsed) {
     const width = Math.min(expandWidthLimit(wa), Math.max(EXPAND_MIN, b.width))
     const height = Math.min(wa.height - 24, Math.max(420, b.height))
-    const freeSpace = Math.max(0, wa.height - height)
-    const ratio = freeSpace > 0 ? Math.min(1, Math.max(0, (b.y - wa.y) / freeSpace)) : 0.15
     const heightRatio = Math.min(1, Math.max(0.4, height / wa.height))
     updateSettings({
       expandWidth: width,
-      expandHeightRatio: Number(heightRatio.toFixed(4)),
-      verticalRatio: Number(ratio.toFixed(4))
+      expandHeightRatio: Number(heightRatio.toFixed(4))
     })
   } else {
     const freeSpace = Math.max(0, wa.height - target.height)

@@ -3,13 +3,16 @@ import { join } from 'node:path'
 import type { AppSettings, ThemeMode } from '@shared/types'
 import { getDirs } from '../lib/paths'
 import { writeFileAtomic } from '../lib/atomic'
+import { log } from '../lib/logger'
+
+const SETTINGS_FLUSH_MS = 400
+let flushTimer: ReturnType<typeof setTimeout> | null = null
 
 export const DEFAULT_SETTINGS: AppSettings = {
   sleepBlockEnabled: false,
   dockDisplayId: null,
   expandWidth: 420,
   expandHeightRatio: 0.72,
-  verticalRatio: 0.15,
   peekHeightRatio: 0.6,
   peekOffsetRatio: null,
   theme: 'dark',
@@ -54,10 +57,6 @@ function normalize(raw: unknown): AppSettings {
       1,
       Math.max(0.4, asNum(s.expandHeightRatio, DEFAULT_SETTINGS.expandHeightRatio))
     ),
-    verticalRatio: Math.min(
-      1,
-      Math.max(0, asNum(s.verticalRatio, DEFAULT_SETTINGS.verticalRatio))
-    ),
     peekHeightRatio: Math.min(
       1,
       Math.max(0.05, asNum(s.peekHeightRatio, DEFAULT_SETTINGS.peekHeightRatio))
@@ -99,6 +98,24 @@ export function getSettings(): AppSettings {
 export function updateSettings(patch: Partial<AppSettings>): AppSettings {
   const next = normalize({ ...getSettings(), ...patch })
   cached = next
-  writeFileAtomic(join(getDirs().root, 'settings.json'), JSON.stringify(next, null, 2))
+  if (!flushTimer) {
+    flushTimer = setTimeout(() => {
+      flushTimer = null
+      flushSettings()
+    }, SETTINGS_FLUSH_MS)
+  }
   return next
+}
+
+export function flushSettings(): void {
+  if (flushTimer) {
+    clearTimeout(flushTimer)
+    flushTimer = null
+  }
+  if (!cached) return
+  try {
+    writeFileAtomic(join(getDirs().root, 'settings.json'), JSON.stringify(cached, null, 2))
+  } catch (err) {
+    log('warn', `设置写盘失败: ${String(err)}`)
+  }
 }

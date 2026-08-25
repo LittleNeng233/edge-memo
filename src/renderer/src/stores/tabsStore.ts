@@ -4,7 +4,6 @@ import { useUiStore } from './uiStore'
 
 export interface Tab {
   meta: NoteMeta
-  body: string
   dirty: boolean
   saving: boolean
   savedAt: string | null
@@ -12,6 +11,7 @@ export interface Tab {
 
 interface TabsState {
   tabs: Tab[]
+  bodies: Record<string, string>
   activeId: string | null
   loading: boolean
   composingIds: Set<string>
@@ -89,13 +89,18 @@ async function saveTabNow(
   if (!tab || !tab.dirty || tab.saving) return true
   const seq = (activeSaveSeq[id] ?? 0) + 1
   activeSaveSeq[id] = seq
-  const bodyAtStart = tab.body
+  const bodyAtStart = state.bodies[id] ?? ''
   const savedBody = lastSavedBodies.get(id)
   if (savedBody !== undefined && savedBody !== bodyAtStart) {
     const prevText = plainTextOf(savedBody).trim()
     const nextText = plainTextOf(bodyAtStart).trim()
     if (prevText.length >= 200 && nextText.length < 10) {
-      const ok = window.confirm('检测到笔记内容被大幅清空。\n\n是否备份清空前的原内容？\n（备份保存到数据目录 backup 文件夹）')
+      const ok = await window.edgememo.dialog.confirm({
+        message: '检测到笔记内容被大幅清空。',
+        detail: '是否备份清空前的原内容？\n（备份保存到数据目录 backup 文件夹）',
+        ok: '备份原内容',
+        cancel: '继续保存'
+      })
       if (ok) {
         try {
           await window.edgememo.note.autoBackup(id, savedBody)
@@ -115,7 +120,7 @@ async function saveTabNow(
     set({
       tabs: cur.tabs.map((t) =>
         t.meta.id === id
-          ? { ...t, saving: false, savedAt: updatedAt, dirty: t.body !== bodyAtStart }
+          ? { ...t, saving: false, savedAt: updatedAt, dirty: cur.bodies[id] !== bodyAtStart }
           : t
       )
     })
@@ -133,6 +138,7 @@ async function saveTabNow(
 
 export const useTabsStore = create<TabsState>((set, get) => ({
   tabs: [],
+  bodies: {},
   activeId: null,
   loading: true,
   composingIds: new Set<string>(),
@@ -155,24 +161,32 @@ export const useTabsStore = create<TabsState>((set, get) => ({
       const validOpen = openIds.filter((id) => metas.some((m) => m.id === id))
       const finalIds = validOpen.length ? validOpen : [metas[0].id]
       const loadedResults = await Promise.all(
-        finalIds.map(async (id): Promise<Tab | null> => {
+        finalIds.map(async (id): Promise<{ meta: NoteMeta; body: string } | null> => {
           try {
             const data: NoteData = await window.edgememo.note.open(id)
-            return { meta: toMeta(data), body: data.body, dirty: false, saving: false, savedAt: null }
+            return { meta: toMeta(data), body: data.body }
           } catch {
             return null
           }
         })
       )
-      const loaded = loadedResults.filter((t): t is Tab => t !== null)
+      const loaded = loadedResults.filter(
+        (t): t is { meta: NoteMeta; body: string } => t !== null
+      )
       if (loaded.length === 0) throw new Error('没有可打开的笔记')
-      for (const t of loaded) lastSavedBodies.set(t.meta.id, t.body)
+      const tabs: Tab[] = []
+      const bodies: Record<string, string> = {}
+      for (const t of loaded) {
+        tabs.push({ meta: t.meta, dirty: false, saving: false, savedAt: null })
+        bodies[t.meta.id] = t.body
+        lastSavedBodies.set(t.meta.id, t.body)
+      }
       const activeFinal =
-        activeId && loaded.some((t) => t.meta.id === activeId)
+        activeId && tabs.some((t) => t.meta.id === activeId)
           ? activeId
-          : loaded[loaded.length - 1].meta.id
-      set({ tabs: loaded, activeId: activeFinal, loading: false })
-      persistSession(loaded, activeFinal)
+          : tabs[tabs.length - 1].meta.id
+      set({ tabs, bodies, activeId: activeFinal, loading: false })
+      persistSession(tabs, activeFinal)
     } catch (err) {
       set({ loading: false })
       toast(`笔记加载失败：${err instanceof Error ? err.message : String(err)}`, 'error')
@@ -187,9 +201,13 @@ export const useTabsStore = create<TabsState>((set, get) => ({
     }
     try {
       const data = await window.edgememo.note.open(id)
-      const tab: Tab = { meta: toMeta(data), body: data.body, dirty: false, saving: false, savedAt: null }
+      const tab: Tab = { meta: toMeta(data), dirty: false, saving: false, savedAt: null }
       lastSavedBodies.set(id, data.body)
-      set((s) => ({ tabs: [...s.tabs, tab], activeId: id }))
+      set((s) => ({
+        tabs: [...s.tabs, tab],
+        bodies: { ...s.bodies, [id]: data.body },
+        activeId: id
+      }))
       persistSession(get().tabs, id)
     } catch (err) {
       toast(`打开笔记失败：${err instanceof Error ? err.message : String(err)}`, 'error')
@@ -199,9 +217,13 @@ export const useTabsStore = create<TabsState>((set, get) => ({
   newNote: async (title) => {
     try {
       const data = await window.edgememo.note.create(title)
-      const tab: Tab = { meta: toMeta(data), body: data.body, dirty: false, saving: false, savedAt: null }
+      const tab: Tab = { meta: toMeta(data), dirty: false, saving: false, savedAt: null }
       lastSavedBodies.set(tab.meta.id, data.body)
-      set((s) => ({ tabs: [...s.tabs, tab], activeId: tab.meta.id }))
+      set((s) => ({
+        tabs: [...s.tabs, tab],
+        bodies: { ...s.bodies, [tab.meta.id]: data.body },
+        activeId: tab.meta.id
+      }))
       persistSession(get().tabs, tab.meta.id)
       toast('已新建笔记', 'success')
     } catch (err) {
@@ -212,8 +234,13 @@ export const useTabsStore = create<TabsState>((set, get) => ({
   closeTab: async (id) => {
     const tab = get().tabs.find((t) => t.meta.id === id)
     if (!tab) return
-    if (tab.dirty && tab.body.trim()) {
-      const ok = window.confirm(`「${tab.meta.title}」有未保存的修改，保存并关闭？\n（取消 = 放弃修改）`)
+    if (tab.dirty && (get().bodies[id] ?? '').trim()) {
+      const ok = await window.edgememo.dialog.confirm({
+        message: `「${tab.meta.title}」有未保存的修改`,
+        detail: '保存并关闭？放弃则不保留本次修改。',
+        ok: '保存并关闭',
+        cancel: '放弃修改'
+      })
       if (ok) {
         const done = await get().flushTab(id)
         const still = get().tabs.find((t) => t.meta.id === id)
@@ -229,14 +256,17 @@ export const useTabsStore = create<TabsState>((set, get) => ({
     }
     clearTimeout(saveTimers.get(id))
     saveTimers.delete(id)
+    lastSavedBodies.delete(id)
     set((s) => {
       const idx = s.tabs.findIndex((t) => t.meta.id === id)
       const tabs = s.tabs.filter((t) => t.meta.id !== id)
+      const bodies = { ...s.bodies }
+      delete bodies[id]
       let activeId = s.activeId
       if (s.activeId === id) {
         activeId = tabs[Math.min(idx, tabs.length - 1)]?.meta.id ?? null
       }
-      return { tabs, activeId }
+      return { tabs, bodies, activeId }
     })
     persistSession(get().tabs, get().activeId)
   },
@@ -250,11 +280,13 @@ export const useTabsStore = create<TabsState>((set, get) => ({
       set((s) => {
         const idx = s.tabs.findIndex((t) => t.meta.id === id)
         const tabs = s.tabs.filter((t) => t.meta.id !== id)
+        const bodies = { ...s.bodies }
+        delete bodies[id]
         let activeId = s.activeId
         if (s.activeId === id) {
           activeId = tabs[Math.min(idx, tabs.length - 1)]?.meta.id ?? null
         }
-        return { tabs, activeId }
+        return { tabs, bodies, activeId }
       })
       persistSession(get().tabs, get().activeId)
       toast('已移入备份，可在数据目录找回', 'success')
@@ -282,9 +314,18 @@ export const useTabsStore = create<TabsState>((set, get) => ({
   },
 
   updateBody: (id, body) => {
-    set((s) => ({
-      tabs: s.tabs.map((t) => (t.meta.id === id ? { ...t, body, dirty: true } : t))
-    }))
+    set((s) => {
+      // 正文存于 bodies：只有 dirty 翻转时才替换 tabs 引用，避免逐键全树重渲染
+      let touched = false
+      const tabs = s.tabs.map((t) => {
+        if (t.meta.id === id && !t.dirty) {
+          touched = true
+          return { ...t, dirty: true }
+        }
+        return t
+      })
+      return { bodies: { ...s.bodies, [id]: body }, tabs: touched ? tabs : s.tabs }
+    })
     clearTimeout(saveTimers.get(id))
     saveTimers.set(
       id,

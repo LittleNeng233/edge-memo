@@ -28,7 +28,7 @@ function shelfIndexFile(): string {
 export function sanitizeFileName(raw: string): string {
   let name = sanitizeNameChars(raw).replace(/[.\s]+$/g, '')
   if (!name) name = 'file'
-  if (RESERVED_NAME_RE.test(name.split('.')[0] === name ? name : name)) {
+  if (RESERVED_NAME_RE.test(name)) {
     name = `_${name}`
   }
   return name.slice(0, 200)

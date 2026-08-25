@@ -29,6 +29,16 @@ function buildIcon(): Electron.NativeImage {
 
 export function createTray(trayActions: TrayActions): Tray {
   actions = trayActions
+  if (!app.isPackaged) {
+    // 开发模式：清理历史遗留的 electron.exe 自启注册
+    try {
+      if (app.getLoginItemSettings().openAtLogin) {
+        app.setLoginItemSettings({ openAtLogin: false })
+      }
+    } catch {
+      /* 忽略 */
+    }
+  }
   tray = new Tray(buildIcon())
   tray.setToolTip('EdgeMemo — 贴边笔记')
   tray.on('click', () => actions?.onToggle())
@@ -66,9 +76,11 @@ function rebuildMenu(): void {
     {
       label: '开机自启',
       type: 'checkbox',
-      checked: login.openAtLogin,
+      // 开发模式下禁用，避免把 electron.exe 注册进系统自启
+      enabled: app.isPackaged,
+      checked: app.isPackaged && login.openAtLogin,
       click: (item) => {
-        app.setLoginItemSettings({ openAtLogin: item.checked, path: process.execPath })
+        app.setLoginItemSettings({ openAtLogin: item.checked })
         rebuildMenu()
       }
     },

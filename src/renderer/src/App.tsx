@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import type { JSX } from 'react'
 import { useUiStore, applyTheme } from './stores/uiStore'
 import { useTabsStore, countStats } from './stores/tabsStore'
@@ -80,11 +80,16 @@ function HeaderBar(): JSX.Element {
 
 function StatusBar(): JSX.Element {
   const active = useTabsStore((s) => s.tabs.find((t) => t.meta.id === s.activeId))
-  const body = useTabsStore((s) => (s.activeId ? s.bodies[s.activeId] : undefined)) ?? ''
+  const body = useTabsStore((s) => (s.activeId ? s.bodies[s.activeId] : '')) ?? ''
+  // 全文统计较重，防抖 300ms，避免逐键触发多个正则扫描
+  const [stats, setStats] = useState(() => countStats(body))
+
+  useEffect(() => {
+    const t = setTimeout(() => setStats(countStats(body)), 300)
+    return () => clearTimeout(t)
+  }, [body])
 
   if (!active) return <footer className="statusbar dim">就绪</footer>
-
-  const { chars, words } = countStats(body)
 
   const savedLabel = active.saving
     ? '保存中…'
@@ -96,7 +101,7 @@ function StatusBar(): JSX.Element {
 
   return (
     <footer className="statusbar">
-      <span>{words} 词 · {chars} 字</span>
+      <span>{stats.words} 词 · {stats.chars} 字</span>
       <span className={`save-state${active.dirty ? ' is-dirty' : ''}${active.saving ? ' is-saving' : ''}`}>
         {savedLabel}
       </span>

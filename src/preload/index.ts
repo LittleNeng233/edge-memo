@@ -28,6 +28,9 @@ const api: EdgememoApi = {
   clipboard: {
     readImage: () => ipcRenderer.invoke('clipboard:read-image')
   },
+  dialog: {
+    confirm: (opts) => ipcRenderer.invoke('dialog:confirm', opts)
+  },
   shelf: {
     add: (paths) => ipcRenderer.invoke('shelf:add', paths),
     list: () => ipcRenderer.invoke('shelf:list'),

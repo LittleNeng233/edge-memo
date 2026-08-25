@@ -122,22 +122,29 @@ export function resolveShelfPath(name: string): string | null {
   return existsSync(abs) ? abs : null
 }
 
+function collectRefsFromDir(dir: string, referenced: Set<string>): void {
+  if (!existsSync(dir)) return
+  for (const f of readdirSync(dir)) {
+    if (!f.toLowerCase().endsWith('.md')) continue
+    try {
+      const content = readFileSync(join(dir, f), 'utf-8')
+      for (const m of content.matchAll(/media:\/\/n\/([0-9a-fA-F-]{8,64}\.(?:png|jpe?g|gif|webp|bmp))/gi)) {
+        referenced.add(m[1])
+      }
+    } catch {
+      /* 跳过无法读取的文件 */
+    }
+  }
+}
+
 export function collectGarbageMedia(): number {
   try {
     const notesDir = getDirs().notes
     if (!existsSync(notesDir)) return 0
     const referenced = new Set<string>()
-    for (const f of readdirSync(notesDir)) {
-      if (!f.toLowerCase().endsWith('.md')) continue
-      try {
-        const content = readFileSync(join(notesDir, f), 'utf-8')
-        for (const m of content.matchAll(/media:\/\/n\/([0-9a-fA-F-]{8,64}\.(?:png|jpe?g|gif|webp|bmp))/gi)) {
-          referenced.add(m[1])
-        }
-      } catch {
-        /* 跳过无法读取的文件 */
-      }
-    }
+    // 备份中的笔记仍可恢复，其引用的图片必须保留
+    collectRefsFromDir(notesDir, referenced)
+    collectRefsFromDir(getDirs().backup, referenced)
     const mediaDir = getDirs().media
     if (!existsSync(mediaDir)) return 0
     const cutoff = Date.now() - 60 * 60 * 1000

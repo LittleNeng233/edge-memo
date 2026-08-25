@@ -10,7 +10,7 @@ import {
 } from './windows/dockEngine'
 import { createTray, destroyTray, rebuildTrayMenu } from './windows/tray'
 import { registerIpc } from './ipc/registerIpc'
-import { getSettings, loadSettings } from './services/settings'
+import { getSettings, loadSettings, flushSettings } from './services/settings'
 import { setSleepBlock, stopSleepBlockOnQuit } from './services/powerService'
 import { repairIndex } from './services/noteStore'
 import { resolveMediaPath, resolveShelfPath, collectGarbageMedia } from './services/mediaStore'
@@ -37,9 +37,12 @@ function markQuitting(): void {
 function requestQuit(): void {
   if (quitConfirmed) return
   quitConfirmed = true
+  // 先同步落盘设置，等待渲染层期间不丢数据
+  flushSettings()
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.webContents.send('app:quit-request')
-    setTimeout(() => doQuit(), 4000)
+    // 系统关机宽限约 5 秒，兜底等待压缩到 2 秒
+    setTimeout(() => doQuit(), 2000)
   } else {
     doQuit()
   }
@@ -47,6 +50,7 @@ function requestQuit(): void {
 
 function doQuit(): void {
   markQuitting()
+  flushSettings()
   stopSleepBlockOnQuit()
   app.quit()
 }
@@ -106,6 +110,10 @@ function bootstrap(): void {
       setSleepBlock(true)
       rebuildTrayMenu()
     }
+
+    // 托盘常驻进程可能长期不重启，定期回收未被笔记/备份引用的媒体文件
+    const gcTimer = setInterval(() => collectGarbageMedia(), 6 * 60 * 60 * 1000)
+    gcTimer.unref?.()
 
     log('info', 'EdgeMemo 已启动')
   })

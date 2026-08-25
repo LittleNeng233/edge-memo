@@ -1,6 +1,7 @@
 import type {
   AppSettings,
   ClipboardImage,
+  DialogConfirmOptions,
   DockState,
   DisplayInfo,
   NoteData,
@@ -26,6 +27,9 @@ export interface EdgememoApi {
   }
   clipboard: {
     readImage(): Promise<ClipboardImage | null>
+  }
+  dialog: {
+    confirm(opts: DialogConfirmOptions): Promise<boolean>
   }
   shelf: {
     add(paths: string[]): Promise<ShelfAddResult[]>

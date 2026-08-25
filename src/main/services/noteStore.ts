@@ -1,11 +1,14 @@
 import {
+  closeSync,
   copyFileSync,
   existsSync,
   mkdirSync,
+  openSync,
   readFileSync,
   readdirSync,
   renameSync,
   rmSync,
+  readSync,
   statSync,
   unlinkSync
 } from 'node:fs'
@@ -16,10 +19,10 @@ import { getDirs } from '../lib/paths'
 import { writeFileAtomic } from '../lib/atomic'
 import { parseNote, serializeNote } from '../lib/frontmatter'
 import { log } from '../lib/logger'
-import { collectGarbageMedia, removeMediaFile } from './mediaStore'
 
 const ID_RE = /^[0-9a-fA-F-]{8,64}$/
 const MAX_BACKUPS = 50
+const META_HEAD_BYTES = 2048
 
 let metasCache: NoteMeta[] | null = null
 let cachedDirMtime = 0
@@ -48,6 +51,29 @@ function readNoteFile(id: string): NoteData {
   }
 }
 
+function readNoteMeta(id: string): NoteMeta {
+  let fd: number
+  try {
+    fd = openSync(notePath(id), 'r')
+  } catch {
+    return readNoteFile(id)
+  }
+  try {
+    const buf = Buffer.alloc(META_HEAD_BYTES)
+    const n = readSync(fd, buf, 0, META_HEAD_BYTES, 0)
+    const head = buf.toString('utf-8', 0, n)
+    if (n < META_HEAD_BYTES || head.includes('\n---\n')) {
+      const { meta } = parseNote(head)
+      if (meta.id && meta.createdAt && meta.updatedAt) {
+        return meta.id === id ? meta : { ...meta, id }
+      }
+    }
+  } finally {
+    closeSync(fd)
+  }
+  return readNoteFile(id)
+}
+
 function sortMetas(metas: NoteMeta[]): NoteMeta[] {
   return metas.sort((a, b) => a.order - b.order || a.createdAt.localeCompare(b.createdAt))
 }
@@ -57,18 +83,12 @@ function scanNotes(): NoteMeta[] {
   const metas: NoteMeta[] = []
   for (const name of readdirSync(dir)) {
     if (!name.endsWith('.md')) continue
+    const id = name.slice(0, -3)
     try {
       const full = join(dir, name)
-      const st = statSync(full)
-      if (!st.isFile()) continue
-      const { meta } = parseNote(readFileSync(full, 'utf-8'))
-      metas.push({
-        id: meta.id || name.slice(0, -3),
-        title: meta.title || '未命名笔记',
-        createdAt: meta.createdAt || st.birthtime.toISOString(),
-        updatedAt: meta.updatedAt || meta.createdAt || st.mtime.toISOString(),
-        order: meta.order
-      })
+      if (!statSync(full).isFile()) continue
+      // 只读文件头部元数据，避免全量读取每个笔记
+      metas.push(readNoteMeta(id))
     } catch (err) {
       log('warn', `扫描笔记失败 ${name}: ${String(err)}`)
     }
@@ -161,7 +181,8 @@ export function createNote(title?: string): NoteData {
 
 export function saveNote(id: string, body: string): { updatedAt: string } {
   assertId(id)
-  const existing = readNoteFile(id)
+  if (body.length > 5 * 1024 * 1024) throw new Error('笔记内容超过 5MB 上限')
+  const existing = readNoteMeta(id)
   const updatedAt = new Date().toISOString()
   const meta: NoteMeta = { ...existing, updatedAt }
   writeFileAtomic(notePath(id), serializeNote(meta, body))
@@ -184,7 +205,7 @@ export function autoBackup(id: string, body: string): void {
   if (typeof body !== 'string' || body.length === 0 || body.length > 5 * 1024 * 1024) {
     throw new Error('备份内容无效')
   }
-  const existing = readNoteFile(id)
+  const existing = readNoteMeta(id)
   const backupDir = getDirs().backup
   if (!existsSync(backupDir)) mkdirSync(backupDir, { recursive: true })
   const stamp = new Date().toISOString().replace(/[:.]/g, '-')
@@ -219,15 +240,6 @@ export function deleteNote(id: string): void {
   assertId(id)
   const src = notePath(id)
   if (!existsSync(src)) return
-  let bodyMediaUrls: string[] = []
-  try {
-    const raw = readFileSync(src, 'utf-8')
-    bodyMediaUrls = Array.from(raw.matchAll(/media:\/\/n\/[0-9a-fA-F-]{8,64}\.[a-z]+/gi)).map(
-      (m) => m[0]
-    )
-  } catch {
-    /* 读不到就跳过媒体清理 */
-  }
   const backupDir = getDirs().backup
   if (!existsSync(backupDir)) mkdirSync(backupDir, { recursive: true })
   let dest = join(backupDir, `${id}.md`)
@@ -237,8 +249,7 @@ export function deleteNote(id: string): void {
   }
   renameSync(src, dest)
   invalidateOnDelete(id)
-  for (const url of bodyMediaUrls) removeMediaFile(url)
-  collectGarbageMedia()
+  // 不主动删除引用的图片：备份仍引用它们，由 collectGarbageMedia 统一回收
   pruneBackups()
 }
 

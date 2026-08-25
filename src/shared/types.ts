@@ -26,7 +26,6 @@ export interface AppSettings {
   dockDisplayId: number | null
   expandWidth: number
   expandHeightRatio: number
-  verticalRatio: number
   peekHeightRatio: number
   peekOffsetRatio: number | null
   theme: ThemeMode
@@ -38,6 +37,13 @@ export interface AppSettings {
 export interface ClipboardImage {
   data: ArrayBuffer
   ext: string
+}
+
+export interface DialogConfirmOptions {
+  message: string
+  detail?: string
+  ok?: string
+  cancel?: string
 }
 
 export interface DockState {

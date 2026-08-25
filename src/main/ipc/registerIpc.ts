@@ -1,4 +1,4 @@
-import { BrowserWindow, ipcMain, shell } from 'electron'
+import { BrowserWindow, dialog, ipcMain, shell } from 'electron'
 import type { AppSettings, ThemeMode } from '@shared/types'
 import {
   autoBackup,
@@ -25,6 +25,7 @@ import {
   expand,
   getDockState,
   listDisplaysForSettings,
+  setAutoCollapseSuppressed,
   toggle
 } from '../windows/dockEngine'
 import { rebuildTrayMenu } from '../windows/tray'
@@ -71,6 +72,34 @@ export function registerIpc(getWin: () => BrowserWindow | null): void {
 
   ipcMain.handle('clipboard:read-image', () => readClipboardImage())
 
+  ipcMain.handle('dialog:confirm', async (_e, opts: unknown) => {
+    const o = (opts ?? {}) as Record<string, unknown>
+    const message = typeof o.message === 'string' ? o.message.slice(0, 500) : ''
+    if (!message) throw new Error('message 无效')
+    const detail = typeof o.detail === 'string' ? o.detail.slice(0, 2000) : undefined
+    const okLabel = typeof o.ok === 'string' && o.ok.trim() ? o.ok.slice(0, 50) : '确定'
+    const cancelLabel =
+      typeof o.cancel === 'string' && o.cancel.trim() ? o.cancel.slice(0, 50) : '取消'
+    const win = getWin()
+    const options = {
+      type: 'question' as const,
+      buttons: [okLabel, cancelLabel],
+      defaultId: 0,
+      cancelId: 1,
+      noLink: true,
+      message,
+      detail
+    }
+    // 对话框期间抑制失焦自动收起
+    setAutoCollapseSuppressed(true)
+    try {
+      const res = win ? await dialog.showMessageBox(win, options) : await dialog.showMessageBox(options)
+      return res.response === 0
+    } finally {
+      setAutoCollapseSuppressed(false)
+    }
+  })
+
   ipcMain.handle(
     'media:save-note-image',
     (_e, noteId: unknown, data: unknown, ext: unknown) => {
@@ -103,11 +132,11 @@ export function registerIpc(getWin: () => BrowserWindow | null): void {
     try {
       startDragOut(win, asString(id, 'id'))
     } catch {
-      let name = ''
+      let name = String(id)
       try {
         name = resolveShelfFile(asString(id, 'id')).item.name
       } catch {
-        name = String(id)
+        /* 回退到原始 ID */
       }
       win.webContents.send('shelf:drag-error', { name, reason: '拖出失败，请重试' })
     }
@@ -128,9 +157,6 @@ export function registerIpc(getWin: () => BrowserWindow | null): void {
     }
     if (typeof input.expandHeightRatio === 'number' && Number.isFinite(input.expandHeightRatio)) {
       next.expandHeightRatio = input.expandHeightRatio
-    }
-    if (typeof input.verticalRatio === 'number' && Number.isFinite(input.verticalRatio)) {
-      next.verticalRatio = input.verticalRatio
     }
     if (typeof input.theme === 'string' && THEMES.includes(input.theme)) next.theme = input.theme
     if (typeof input.autoCollapse === 'boolean') next.autoCollapse = input.autoCollapse
@@ -161,7 +187,6 @@ export function registerIpc(getWin: () => BrowserWindow | null): void {
     const touchesLayout =
       next.expandWidth !== undefined ||
       next.expandHeightRatio !== undefined ||
-      next.verticalRatio !== undefined ||
       next.peekHeightRatio !== undefined ||
       next.dockDisplayId !== undefined
     if (touchesLayout) applyLayout()
