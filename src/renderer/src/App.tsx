@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import type { JSX } from 'react'
 import { useUiStore, applyTheme } from './stores/uiStore'
 import { useTabsStore, countStats } from './stores/tabsStore'
 import { useShelfStore } from './stores/shelfStore'
@@ -78,13 +79,13 @@ function HeaderBar(): JSX.Element {
 }
 
 function StatusBar(): JSX.Element {
-  const tabs = useTabsStore((s) => s.tabs)
-  const activeId = useTabsStore((s) => s.activeId)
-  const active = tabs.find((t) => t.meta.id === activeId)
+  const active = useTabsStore((s) => s.tabs.find((t) => t.meta.id === s.activeId))
+  const body = useTabsStore((s) => (s.activeId ? s.bodies[s.activeId] : undefined)) ?? ''
 
   if (!active) return <footer className="statusbar dim">就绪</footer>
 
-  const { chars, words } = countStats(active.body)
+  const { chars, words } = countStats(body)
+
   const savedLabel = active.saving
     ? '保存中…'
     : active.dirty
@@ -115,6 +116,10 @@ export default function App(): JSX.Element | null {
   const setSettingsOpen = useUiStore((s) => s.setSettingsOpen)
 
   const activeTab = tabs.find((t) => t.meta.id === activeId) ?? null
+  // 挂载时快照：编辑器为非受控组件，正文变更走 bodies，不驱动 App 重渲染
+  const activeInitialBody = activeTab
+    ? (useTabsStore.getState().bodies[activeTab.meta.id] ?? '')
+    : ''
 
   useEffect(() => applyTheme(theme), [theme])
 
@@ -182,7 +187,7 @@ export default function App(): JSX.Element | null {
         {activeTab ? (
           <>
             <div key={`flash-${activeTab.meta.id}`} className="workspace-flash" aria-hidden="true" />
-            <RichEditor key={activeTab.meta.id} tabId={activeTab.meta.id} initialBody={activeTab.body} />
+            <RichEditor key={activeTab.meta.id} tabId={activeTab.meta.id} initialBody={activeInitialBody} />
           </>
         ) : (
           <div className="empty-hint workspace-empty">

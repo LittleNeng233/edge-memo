@@ -17,6 +17,6 @@ export function startDragOut(win: BrowserWindow, id: string): void {
     win.webContents.startDrag({ file: absPath, files: [absPath], icon })
   } catch (err) {
     log('error', `拖出失败: ${String(err)}`)
-    throw new Error('启动拖拽失败')
+    throw new Error('启动拖拽失败', { cause: err })
   }
 }

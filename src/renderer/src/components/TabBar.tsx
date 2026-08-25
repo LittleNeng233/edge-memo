@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import type { JSX } from 'react'
 import { useTabsStore } from '../stores/tabsStore'
 
 interface DragOver {

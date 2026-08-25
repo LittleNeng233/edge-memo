@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import type { JSX } from 'react'
 import type {
   ClipboardEvent as ReactClipboardEvent,
   DragEvent as ReactDragEvent,
@@ -98,8 +99,19 @@ export function RichEditor({ tabId, initialBody }: RichEditorProps): JSX.Element
   }, [])
 
   useEffect(() => {
-    document.addEventListener('selectionchange', refreshToolbar)
-    return () => document.removeEventListener('selectionchange', refreshToolbar)
+    let timer: ReturnType<typeof setTimeout> | null = null
+    const onSelectionChange = (): void => {
+      if (timer) return
+      timer = setTimeout(() => {
+        timer = null
+        refreshToolbar()
+      }, 30)
+    }
+    document.addEventListener('selectionchange', onSelectionChange)
+    return () => {
+      if (timer) clearTimeout(timer)
+      document.removeEventListener('selectionchange', onSelectionChange)
+    }
   }, [refreshToolbar])
 
   useEffect(() => {

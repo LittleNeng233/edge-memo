@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import type { DragEvent } from 'react'
+import type { DragEvent, JSX } from 'react'
 import { useShelfStore, formatSize } from '../stores/shelfStore'
 import { useUiStore } from '../stores/uiStore'
 

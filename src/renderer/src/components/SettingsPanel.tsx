@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import type { JSX } from 'react'
 import type { DisplayInfo, ThemeMode } from '@shared/types'
 import { useUiStore } from '../stores/uiStore'
 
@@ -247,7 +248,7 @@ export function SettingsPanel(): JSX.Element | null {
           </div>
         </div>
 
-        <footer className="settings-foot dim">EdgeMemo v0.1.0 · 数据保存在 %APPDATA%\EdgeMemo\data\</footer>
+        <footer className="settings-foot dim">EdgeMemo v0.2.0 · 数据保存在 %APPDATA%\EdgeMemo\data\</footer>
       </section>
     </div>
   )

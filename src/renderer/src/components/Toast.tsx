@@ -1,3 +1,4 @@
+import type { JSX } from 'react'
 import { useUiStore } from '../stores/uiStore'
 
 export function Toasts(): JSX.Element {

@@ -65,7 +65,7 @@ export async function importImageFromSource(src: string): Promise<string> {
     return writeImageFile(new Uint8Array(buf), ext)
   }
   if (src.toLowerCase().startsWith('file://')) {
-    let p = ''
+    let p: string
     try {
       p = decodeURIComponent(fileURLToPath(src))
     } catch {
@@ -93,8 +93,10 @@ export async function importImageFromSource(src: string): Promise<string> {
     if (buf.byteLength > MAX_IMAGE_BYTES) throw new Error('图片超过 20MB 上限')
     return writeImageFile(buf, ext)
   } catch (err) {
-    if (err instanceof Error && err.name === 'AbortError') throw new Error('下载超时（15 秒）')
-    throw err instanceof Error ? err : new Error(String(err))
+    if (err instanceof Error && err.name === 'AbortError') {
+      throw new Error('下载超时（15 秒）', { cause: err })
+    }
+    throw err instanceof Error ? err : new Error(String(err), { cause: err })
   } finally {
     clearTimeout(timer)
   }
@@ -118,18 +120,6 @@ export function resolveShelfPath(name: string): string | null {
   if (!isValidShelfName(name) || name === '.' || name === '..') return null
   const abs = join(getDirs().shelf, name)
   return existsSync(abs) ? abs : null
-}
-
-export function removeMediaFile(url: string): void {
-  const name = url.replace(/^media:\/\/n\//, '')
-  if (name === url) return
-  if (!MEDIA_NAME_RE.test(name)) return
-  try {
-    const abs = join(getDirs().media, name)
-    if (existsSync(abs)) unlinkSync(abs)
-  } catch (err) {
-    log('warn', `清理媒体文件失败 ${name}: ${String(err)}`)
-  }
 }
 
 export function collectGarbageMedia(): number {
@@ -172,34 +162,52 @@ export function collectGarbageMedia(): number {
   }
 }
 
-function readClipboardPng(): Buffer | null {
-  const img = clipboard.readImage()
-  if (img.isEmpty()) return null
-  return img.toPNG()
-}
+const CLIPBOARD_IMAGE_TYPES: Array<{ mime: string; ext: string }> = [
+  { mime: 'image/png', ext: 'png' },
+  { mime: 'image/jpeg', ext: 'jpg' },
+  { mime: 'image/bmp', ext: 'bmp' }
+]
 
-export function readClipboardImage(): ClipboardImage | null {
-  const png = readClipboardPng()
-  if (!png) return null
-  return {
-    data: png.buffer.slice(png.byteOffset, png.byteOffset + png.byteLength) as ArrayBuffer,
-    ext: 'png'
+/** Electron 44 起 clipboard 为异步 W3C 风格 API，按 MIME 逐项探测 */
+async function readClipboardImageBytes(): Promise<{ data: Uint8Array; ext: string } | null> {
+  const items = await clipboard.read()
+  for (const item of items) {
+    for (const t of CLIPBOARD_IMAGE_TYPES) {
+      if (!item.types.includes(t.mime)) continue
+      try {
+        const raw = await item.getType(t.mime)
+        if (!(raw instanceof Blob)) continue
+        return { data: new Uint8Array(await raw.arrayBuffer()), ext: t.ext }
+      } catch {
+        /* 该格式读取失败则继续探测 */
+      }
+    }
   }
+  return null
 }
 
-export function pasteShelfImage(): ShelfAddResult {
+export async function readClipboardImage(): Promise<ClipboardImage | null> {
+  const img = await readClipboardImageBytes()
+  if (!img || img.data.byteLength === 0) return null
+  const copy = new ArrayBuffer(img.data.byteLength)
+  new Uint8Array(copy).set(img.data)
+  return { data: copy, ext: img.ext }
+}
+
+export async function pasteShelfImage(): Promise<ShelfAddResult> {
   try {
-    const png = readClipboardPng()
-    if (!png) {
+    const img = await readClipboardImageBytes()
+    if (!img || img.data.byteLength === 0) {
       return { name: '剪贴板', ok: false, error: '剪贴板中没有图片' }
     }
-    if (png.byteLength > MAX_IMAGE_BYTES) {
+    const buf = Buffer.from(img.data)
+    if (buf.byteLength > MAX_IMAGE_BYTES) {
       return { name: '剪贴板', ok: false, error: '图片超过 20MB 上限' }
     }
     const now = new Date()
     const pad = (n: number): string => String(n).padStart(2, '0')
-    const name = `截图 ${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}.png`
-    return addToShelfBuffer(name, png)
+    const stamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`
+    return addToShelfBuffer(`截图 ${stamp}.${img.ext}`, buf)
   } catch (err) {
     log('warn', `粘贴截图失败: ${String(err)}`)
     return { name: '剪贴板', ok: false, error: err instanceof Error ? err.message : String(err) }
