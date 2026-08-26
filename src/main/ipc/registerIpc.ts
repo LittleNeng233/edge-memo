@@ -19,6 +19,7 @@ import {
 import { startDragOut } from '../services/dragOut'
 import { getSettings, updateSettings } from '../services/settings'
 import { getSleepBlockState, setSleepBlock } from '../services/powerService'
+import { applyAutoStartup } from '../services/autoStartup'
 import {
   applyLayout,
   collapse,
@@ -175,10 +176,18 @@ export function registerIpc(getWin: () => BrowserWindow | null): void {
       next.peekOffsetRatio = input.peekOffsetRatio
     }
     if (typeof input.lastCollapsed === 'boolean') next.lastCollapsed = input.lastCollapsed
+    if (typeof input.launchAtStartup === 'boolean') next.launchAtStartup = input.launchAtStartup
     const prevSleep = getSettings().sleepBlockEnabled
     const saved = updateSettings(next)
     if (next.sleepBlockEnabled !== undefined && next.sleepBlockEnabled !== prevSleep) {
       setSleepBlock(saved.sleepBlockEnabled)
+      rebuildTrayMenu()
+      for (const w of BrowserWindow.getAllWindows()) {
+        if (!w.isDestroyed()) w.webContents.send('settings:changed', saved)
+      }
+    }
+    if (next.launchAtStartup !== undefined) {
+      applyAutoStartup(saved.launchAtStartup)
       rebuildTrayMenu()
       for (const w of BrowserWindow.getAllWindows()) {
         if (!w.isDestroyed()) w.webContents.send('settings:changed', saved)

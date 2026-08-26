@@ -95,6 +95,22 @@ export function SettingsPanel(): JSX.Element | null {
         <div className="settings-body">
           <div className="setting-row">
             <div className="setting-text">
+              <label htmlFor="launch-toggle">开机自启</label>
+              <p className="dim">登录 Windows 后自动启动 EdgeMemo（托盘常驻）。</p>
+            </div>
+            <button
+              id="launch-toggle"
+              className={`switch${settings.launchAtStartup ? ' is-on' : ''}`}
+              role="switch"
+              aria-checked={settings.launchAtStartup}
+              onClick={() => void apply({ launchAtStartup: !settings.launchAtStartup })}
+            >
+              <span className="switch-knob" />
+            </button>
+          </div>
+
+          <div className="setting-row">
+            <div className="setting-text">
               <label htmlFor="sleep-toggle">阻止系统自动休眠</label>
               <p className="dim">开启后系统空闲不睡眠（息屏与手动睡眠不受控），会增加耗电。</p>
             </div>

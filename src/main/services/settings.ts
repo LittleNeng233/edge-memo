@@ -18,7 +18,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
   theme: 'dark',
   autoCollapse: false,
   autoCollapseDelay: 700,
-  lastCollapsed: false
+  lastCollapsed: false,
+  launchAtStartup: false
 }
 
 let cached: AppSettings | null = null
@@ -72,7 +73,8 @@ function normalize(raw: unknown): AppSettings {
       3000,
       Math.max(500, Math.round(asNum(s.autoCollapseDelay, DEFAULT_SETTINGS.autoCollapseDelay)))
     ),
-    lastCollapsed: asBool(s.lastCollapsed, DEFAULT_SETTINGS.lastCollapsed)
+    lastCollapsed: asBool(s.lastCollapsed, DEFAULT_SETTINGS.lastCollapsed),
+    launchAtStartup: asBool(s.launchAtStartup, DEFAULT_SETTINGS.launchAtStartup)
   }
 }
 

@@ -1,9 +1,10 @@
-import { Menu, Tray, app, nativeImage, BrowserWindow } from 'electron'
+import { Menu, Tray, nativeImage, BrowserWindow } from 'electron'
 import type { MenuItemConstructorOptions } from 'electron'
 import { getResourcePath } from '../lib/paths'
 import { log } from '../lib/logger'
 import { getSleepBlockState, setSleepBlock } from '../services/powerService'
 import { getSettings, updateSettings } from '../services/settings'
+import { applyAutoStartup } from '../services/autoStartup'
 
 let tray: Tray | null = null
 
@@ -29,16 +30,6 @@ function buildIcon(): Electron.NativeImage {
 
 export function createTray(trayActions: TrayActions): Tray {
   actions = trayActions
-  if (!app.isPackaged) {
-    // 开发模式：清理历史遗留的 electron.exe 自启注册
-    try {
-      if (app.getLoginItemSettings().openAtLogin) {
-        app.setLoginItemSettings({ openAtLogin: false })
-      }
-    } catch {
-      /* 忽略 */
-    }
-  }
   tray = new Tray(buildIcon())
   tray.setToolTip('EdgeMemo — 贴边笔记')
   tray.on('click', () => actions?.onToggle())
@@ -53,7 +44,6 @@ export function rebuildTrayMenu(): void {
 function rebuildMenu(): void {
   if (!tray || !actions) return
   const power = getSleepBlockState()
-  const login = app.getLoginItemSettings()
   const template: MenuItemConstructorOptions[] = [
     { label: '展开 / 收起（点击图标同效）', click: () => actions?.onToggle() },
     { type: 'separator' },
@@ -76,11 +66,13 @@ function rebuildMenu(): void {
     {
       label: '开机自启',
       type: 'checkbox',
-      // 开发模式下禁用，避免把 electron.exe 注册进系统自启
-      enabled: app.isPackaged,
-      checked: app.isPackaged && login.openAtLogin,
+      checked: getSettings().launchAtStartup,
       click: (item) => {
-        app.setLoginItemSettings({ openAtLogin: item.checked })
+        applyAutoStartup(item.checked)
+        updateSettings({ launchAtStartup: item.checked })
+        for (const w of BrowserWindow.getAllWindows()) {
+          if (!w.isDestroyed()) w.webContents.send('settings:changed', getSettings())
+        }
         rebuildMenu()
       }
     },

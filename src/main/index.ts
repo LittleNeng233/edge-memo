@@ -12,6 +12,7 @@ import { createTray, destroyTray, rebuildTrayMenu } from './windows/tray'
 import { registerIpc } from './ipc/registerIpc'
 import { getSettings, loadSettings, flushSettings } from './services/settings'
 import { setSleepBlock, stopSleepBlockOnQuit } from './services/powerService'
+import { applyAutoStartup } from './services/autoStartup'
 import { repairIndex } from './services/noteStore'
 import { resolveMediaPath, resolveShelfPath, collectGarbageMedia } from './services/mediaStore'
 import { initDirs } from './lib/paths'
@@ -110,6 +111,9 @@ function bootstrap(): void {
       setSleepBlock(true)
       rebuildTrayMenu()
     }
+
+    // 启动时同步登录项注册状态（设置可能被外部改动过）
+    applyAutoStartup(settings.launchAtStartup)
 
     // 托盘常驻进程可能长期不重启，定期回收未被笔记/备份引用的媒体文件
     const gcTimer = setInterval(() => collectGarbageMedia(), 6 * 60 * 60 * 1000)

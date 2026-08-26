@@ -32,6 +32,7 @@ export interface AppSettings {
   autoCollapse: boolean
   autoCollapseDelay: number
   lastCollapsed: boolean
+  launchAtStartup: boolean
 }
 
 export interface ClipboardImage {
